@@ -14,9 +14,9 @@ class Artist(Base):
     __tablename__ = 'artists'
 
     id = Column(String, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
     popularity = Column(Integer, nullable=True)
-    profile_picture_uri = Column(String, unique=True, nullable=True)
+    profile_picture_uri = Column(String, nullable=True)
     genre = Column(String, nullable=True) # comma-separated list of genres
 
     def __repr__(self):
@@ -25,4 +25,3 @@ class Artist(Base):
     # Relationships
     albums = relationship('Album', back_populates='artist', cascade='all, delete-orphan')
     tracks = relationship('Track', back_populates='main_artist', cascade='all, delete-orphan')
-    featured_tracks = relationship('Track', secondary='feats', back_populates='featuring_artists')

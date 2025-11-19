@@ -14,17 +14,16 @@ class Track(Base):
     __tablename__ = 'tracks'
 
     id = Column(String, primary_key=True)
-    track_name = Column(String, unique=True, nullable=False)
+    track_name = Column(String, nullable=False)
     album_id = Column(String, ForeignKey('albums.id'), nullable=False)
     duration_ms = Column(Integer, nullable=True)  # duration of the track in milliseconds
     main_artist_id = Column(String, ForeignKey('artists.id'), nullable=False)
     popularity = Column(Integer, nullable=True)
-    track_cover_uri = Column(String, unique=True, nullable=False)
+    track_cover_uri = Column(String, nullable=True)
 
     # Relationships
     album = relationship('Album', back_populates='tracks')
     main_artist = relationship('Artist', back_populates='tracks')
-    featuring_artists = relationship('Artist', secondary='feats', back_populates='featured_tracks')
     histories = relationship('History', back_populates='track', cascade='all, delete-orphan')
 
     def __repr__(self):

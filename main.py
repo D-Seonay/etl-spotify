@@ -1,6 +1,7 @@
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from api.v1.security.security import security
 from api.v1.router.import_spotify_history_data import router as import_router
@@ -28,9 +29,9 @@ app.include_router(import_router)
 async def read_root():
     """
     This is the root endpoint of the API.
-    It provides a simple welcome message and directs users to the documentation at /docs.
+    Redirects users to the documentation at /docs.
     """
-    return {"Hello": "Read the Docs at /docs"}
+    return RedirectResponse(url="/docs", status_code=302)
 
 
 @app.get("/health")

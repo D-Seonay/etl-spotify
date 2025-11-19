@@ -14,8 +14,8 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(String, primary_key=True)
-    display_name = Column(String, unique=True, nullable=False)
-    profile_picture_uri = Column(String, unique=True, nullable=False)
+    display_name = Column(String, nullable=False)
+    profile_picture_uri = Column(String, nullable=True)
 
     def __repr__(self):
         return f"<User(id={self.id}, display_name='{self.display_name}', profile_picture_uri='{self.profile_picture_uri}')>"

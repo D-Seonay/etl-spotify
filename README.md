@@ -3,12 +3,13 @@
 
 Lightweight ETL and import tools for Spotify streaming history into a PostgreSQL database.
 
-This repository contains SQLAlchemy entities, Alembic migrations, an ETL runner, and an API router to import Spotify streaming history JSON files exported from the Spotify app.
+This repository contains SQLAlchemy entities, Alembic migrations, an ETL runner, and an API router to import Spotify streaming history JSON files exported from the Spotify app. **Now with Spotify Web API integration** to enrich data with real IDs, popularity scores, genres, and cover images.
 
 **What you'll find**
 - `entity/` — SQLAlchemy models for `user`, `track`, `artist`, `album`, `history`, etc.
 - `migrations/` & `alembic.ini` — Alembic configuration and migration scripts.
 - `data/` — sample Spotify streaming history JSON files used for imports.
+- `modules/` — Import modules with Spotify API enrichment
 - `api/` — FastAPI routers (e.g. import endpoint) and security helpers.
 - `etl.py` — small runner to import/process files (see usage).
 - `main.py` — FastAPI application entrypoint.
@@ -29,6 +30,7 @@ pip install -r requirements.txt
 2. Configure environment variables
 
 - Copy `.env.example` to `.env` (or create `.env`) and set your DB connection values. The app looks for `DATABASE_URL` or the `DB_*` variables.
+- **IMPORTANT**: Configure your Spotify API credentials (see [Spotify API Setup](#spotify-api-setup))
 
 3. Start a local Postgres (optional)
 
@@ -49,30 +51,92 @@ Alternatively (development only) you can create tables from models:
 python scripts/create_db.py
 ```
 
-## Importing Spotify History
+## Spotify API Setup
 
-There are two ways to import the Spotify JSON streaming history:
+🔑 **Required for data enrichment**
 
-- Using the ETL runner:
+The import system uses the Spotify Web API to enrich your listening history with:
+- ✅ Real Spotify IDs (no more hash-generated IDs)
+- ✅ Track popularity, duration, and cover images
+- ✅ Artist popularity, genres, and profile pictures
+- ✅ Album release dates, total tracks, and cover images
+
+### Get your Spotify API credentials
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create a new app
+3. Copy your **Client ID** and **Client Secret**
+4. Add them to your `.env` file:
 
 ```bash
-# imports files listed or entire data/ folder depending on implementation
-python etl.py --dir data/ 
+SPOTIFY_CLIENT_ID=your_client_id_here
+SPOTIFY_CLIENT_SECRET=your_client_secret_here
 ```
 
-- Using the API router (FastAPI):
+📖 See [SPOTIFY_API_SETUP.md](SPOTIFY_API_SETUP.md) for detailed instructions.
 
-1. Run the API server:
+### Test your API connection
 
+```bash
+python test_spotify_api.py
+```
+
+This will verify your credentials and test the enrichment process.
+
+## Importing Spotify History
+
+### 📋 Three import methods available:
+
+#### 1. Via CLI Script (Recommended for testing)
+
+```bash
+python test_import.py data/Streaming_History_Audio_2021-2024_0.json
+```
+
+#### 2. Via FastAPI (Recommended for production)
+
+Start the API server:
 ```bash
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-2. Use the import endpoint under `/api/v1/...` (see `api/v1/router/import_spotify_history_data.py`) to POST files or trigger an import job.
+Then import via HTTP request:
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/import-data" \
+  -H "Authorization: Bearer your_api_key" \
+  -F "file=@data/Streaming_History_Audio_2021-2024_0.json" \
+  -F "user_id=your_user_id"
+```
+
+Or test with the provided script:
+```bash
+python test_api_endpoint.py
+```
+
+📖 See [API_USAGE.md](API_USAGE.md) for complete API documentation.
+
+#### 3. Via ETL runner
+
+```bash
+python etl.py --dir data/
+```
+
+### 📊 What happens during import:
+
+1. **Parse JSON** - Extract listening history entries
+2. **Enrich with Spotify API** - Get real IDs, popularity, genres, images, etc. (batch processing, ~50 tracks at a time)
+3. **Insert to database** - Store enriched data with duplicate handling
+
+### ⏱️ Expected time:
+
+- 500 tracks: ~2-3 minutes
+- 2000 tracks: ~5-10 minutes
 
 Notes:
-- The `data/` directory in the repository contains example files named like `Streaming_History_Audio_2021-2024_0.json`.
-- Import routines will typically parse timestamped play events and insert or upsert related `track`, `artist`, `album`, and `history` rows.
+- The `data/` directory contains example files like `Streaming_History_Audio_2021-2024_0.json`.
+- Import routines parse timestamped play events and enrich them with Spotify API data.
+- Duplicates are automatically handled with `ON CONFLICT DO NOTHING` clauses.
+- Progress is displayed in real-time during enrichment.
 
 ## Running the ETL locally
 

@@ -14,10 +14,10 @@ class Album(Base):
     __tablename__ = 'albums'
 
     id = Column(String, primary_key=True)
-    album_name = Column(String, unique=True, nullable=False)
+    album_name = Column(String, nullable=False)
     artist_id = Column(String, ForeignKey('artists.id'), nullable=False)
     release_date = Column(Date, nullable=True)
-    cover_image_uri = Column(String, unique=True, nullable=True)
+    cover_image_uri = Column(String, nullable=True)
     total_tracks = Column(Integer, nullable=True)  # total number of tracks in the album
 
     def __repr__(self):
